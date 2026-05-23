@@ -1,17 +1,30 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
-  Box, Container, Paper, Typography, TextField, Button, Alert,
-  Grid, Divider, CircularProgress
+  Box, Container, Paper, Typography, TextField, Button, Alert, IconButton,
+  InputAdornment, Grid, Stepper, Step, StepLabel,
 } from '@mui/material';
-import { useNavigate, Link } from 'react-router-dom';
+import { Visibility, VisibilityOff, ArrowForward, Check } from '@mui/icons-material';
+import { useTheme } from '@mui/material/styles';
+import { Link, useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
+import kipuLogo from '../assets/kipu_condor.jpg';
 
 function RegisterPage() {
+  const theme = useTheme();
+  const { register } = useAuth();
+  const navigate = useNavigate();
+  const [activeStep, setActiveStep] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [showPassword, setShowPassword] = useState(false);
+  const [particles, setParticles] = useState([]);
+
+  // Datos del formulario
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     password: '',
-    confirmPassword: '',
     ruc: '',
     razonSocial: '',
     nombreComercial: '',
@@ -19,44 +32,58 @@ function RegisterPage() {
     codigoEstablecimiento: '001',
     codigoPuntoEmision: '001',
   });
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
-  const { register } = useAuth();
-  const navigate = useNavigate();
+
+  // Partículas
+  useEffect(() => {
+    const newParticles = [];
+    for (let i = 0; i < 120; i++) {
+      newParticles.push({
+        x: Math.random() * window.innerWidth,
+        y: Math.random() * window.innerHeight,
+        size: Math.random() * 4 + 1,
+        speedX: (Math.random() - 0.5) * 0.3,
+        speedY: (Math.random() - 0.5) * 0.3,
+        opacity: Math.random() * 0.5 + 0.1,
+        pulse: Math.random() * Math.PI * 2,
+      });
+    }
+    setParticles(newParticles);
+
+    let animationFrame;
+    let time = 0;
+    const animate = () => {
+      time += 0.02;
+      setParticles(prev =>
+        prev.map(p => {
+          let newX = p.x + p.speedX;
+          let newY = p.y + p.speedY;
+          if (newX < 0) newX = window.innerWidth;
+          if (newX > window.innerWidth) newX = 0;
+          if (newY < 0) newY = window.innerHeight;
+          if (newY > window.innerHeight) newY = 0;
+          const pulseOpacity = p.opacity + Math.sin(time + p.pulse) * 0.1;
+          return { ...p, x: newX, y: newY, opacity: Math.min(0.7, Math.max(0.1, pulseOpacity)) };
+        })
+      );
+      animationFrame = requestAnimationFrame(animate);
+    };
+    animate();
+    return () => cancelAnimationFrame(animationFrame);
+  }, []);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
+  const handleNext = () => setActiveStep(1);
+  const handleBack = () => setActiveStep(0);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
-
-    if (formData.password !== formData.confirmPassword) {
-      setError('Las contraseñas no coinciden');
-      return;
-    }
-
-    if (formData.ruc.length !== 13) {
-      setError('El RUC debe tener 13 dígitos');
-      return;
-    }
-
+    setError(null);
     setLoading(true);
     try {
-      const registerData = {
-        name: formData.name,
-        email: formData.email,
-        password: formData.password,
-        ruc: formData.ruc,
-        razonSocial: formData.razonSocial,
-        nombreComercial: formData.nombreComercial,
-        direccionMatriz: formData.direccionMatriz,
-        codigoEstablecimiento: formData.codigoEstablecimiento || '001',
-        codigoPuntoEmision: formData.codigoPuntoEmision || '001',
-      };
-
-      await register(registerData);
+      await register(formData);
       navigate('/dashboard');
     } catch (err) {
       setError(err.response?.data?.message || 'Error al registrarse');
@@ -65,177 +92,267 @@ function RegisterPage() {
     }
   };
 
+  const steps = ['Cuenta', 'Empresa'];
+
   return (
-    <Container maxWidth="md" sx={{ mt: 6, mb: 6 }}>
-      <Paper sx={{ p: { xs: 3, md: 5 } }}>
-        <Typography
-          variant="h5"
-          sx={{
-            fontFamily: '"Fraunces", serif',
-            fontWeight: 600,
-            mb: 1,
-            textAlign: 'center',
-            color: 'text.primary',
-          }}
+    <Box
+      sx={{
+        minHeight: '100vh',
+        bgcolor: 'background.default',
+        position: 'relative',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        p: 2,
+      }}
+    >
+      {/* Partículas */}
+      <Box sx={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 0 }}>
+        {particles.map((p, i) => (
+          <Box
+            key={i}
+            sx={{
+              position: 'absolute',
+              left: p.x,
+              top: p.y,
+              width: p.size,
+              height: p.size,
+              borderRadius: '50%',
+              bgcolor: `${theme.palette.secondary.main}80`,
+              opacity: p.opacity,
+              transform: 'translate(-50%, -50%)',
+              transition: 'opacity 0.5s ease',
+            }}
+          />
+        ))}
+      </Box>
+
+      {/* Formulario */}
+      <Container maxWidth="sm" sx={{ position: 'relative', zIndex: 1 }}>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, ease: 'easeOut' }}
         >
-          Crear cuenta en KIPU
-        </Typography>
-        <Typography
-          variant="body2"
-          sx={{ mb: 3, textAlign: 'center', color: 'text.secondary' }}
-        >
-          Comienza a facturar electrónicamente en Ecuador
-        </Typography>
+          <Paper
+            sx={{
+              p: 4,
+              borderRadius: 4,
+              bgcolor: 'background.paper',
+              border: '1px solid',
+              borderColor: 'divider',
+              boxShadow: '0 4px 20px rgba(0,0,0,0.04)',
+            }}
+          >
+            {/* Logo */}
+            <Box sx={{ textAlign: 'center', mb: 3 }}>
+              <Link to="/" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, textDecoration: 'none' }}>
+                <Box
+                  component="img"
+                  src={kipuLogo}
+                  alt="KIPU"
+                  sx={{ width: 36, height: 36, borderRadius: 2, objectFit: 'cover' }}
+                />
+                <Typography
+                  sx={{
+                    fontFamily: '"Fraunces", serif',
+                    fontSize: 24,
+                    fontWeight: 600,
+                    color: 'primary.main',
+                    letterSpacing: '-0.02em',
+                  }}
+                >
+                  kipu
+                </Typography>
+              </Link>
+              <Typography variant="h5" fontWeight={700} color="text.primary" mt={1}>
+                Crear cuenta
+              </Typography>
+              <Typography variant="body2" color="text.secondary" mt={0.5}>
+                Configura tu empresa y empieza a facturar
+              </Typography>
+            </Box>
 
-        {error && <Alert severity="error" sx={{ mb: 3 }}>{error}</Alert>}
+            <Stepper activeStep={activeStep} alternativeLabel sx={{ mb: 4 }}>
+              {steps.map((label) => (
+                <Step key={label}>
+                  <StepLabel>{label}</StepLabel>
+                </Step>
+              ))}
+            </Stepper>
 
-        <form onSubmit={handleSubmit}>
-          {/* Datos del usuario */}
-          <Typography variant="h6" sx={{ fontWeight: 600, mb: 2, fontFamily: '"Fraunces", serif' }}>
-            Datos de acceso
-          </Typography>
-          <Grid container spacing={2}>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                label="Nombre completo"
-                name="name"
-                value={formData.name}
-                onChange={handleChange}
-                required
-              />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                label="Email"
-                name="email"
-                type="email"
-                value={formData.email}
-                onChange={handleChange}
-                required
-              />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                label="Contraseña"
-                name="password"
-                type="password"
-                value={formData.password}
-                onChange={handleChange}
-                required
-                helperText="Mínimo 8 caracteres"
-                inputProps={{ minLength: 8 }}
-              />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                label="Confirmar contraseña"
-                name="confirmPassword"
-                type="password"
-                value={formData.confirmPassword}
-                onChange={handleChange}
-                required
-              />
-            </Grid>
-          </Grid>
+            {error && (
+              <Alert severity="error" sx={{ mb: 2 }}>
+                {error}
+              </Alert>
+            )}
 
-          <Divider sx={{ my: 3 }} />
+            <form onSubmit={handleSubmit}>
+              {activeStep === 0 ? (
+                /* Paso 1: Datos de cuenta */
+                <Box>
+                  <TextField
+                    fullWidth
+                    label="Nombre completo"
+                    name="name"
+                    value={formData.name}
+                    onChange={handleChange}
+                    required
+                    sx={{ mb: 2 }}
+                  />
+                  <TextField
+                    fullWidth
+                    label="Email"
+                    name="email"
+                    type="email"
+                    value={formData.email}
+                    onChange={handleChange}
+                    required
+                    sx={{ mb: 2 }}
+                  />
+                  <TextField
+                    fullWidth
+                    label="Contraseña"
+                    name="password"
+                    type={showPassword ? 'text' : 'password'}
+                    value={formData.password}
+                    onChange={handleChange}
+                    required
+                    sx={{ mb: 3 }}
+                    helperText="Mínimo 8 caracteres"
+                    InputProps={{
+                      endAdornment: (
+                        <InputAdornment position="end">
+                          <IconButton onClick={() => setShowPassword(!showPassword)} edge="end">
+                            {showPassword ? <VisibilityOff /> : <Visibility />}
+                          </IconButton>
+                        </InputAdornment>
+                      ),
+                    }}
+                  />
+                  <Button
+                    fullWidth
+                    variant="contained"
+                    onClick={handleNext}
+                    endIcon={<ArrowForward />}
+                    sx={{
+                      bgcolor: 'secondary.main',
+                      '&:hover': { bgcolor: '#E04A0F' },
+                      py: 1.5,
+                      fontWeight: 600,
+                      borderRadius: 3,
+                    }}
+                  >
+                    Siguiente
+                  </Button>
+                </Box>
+              ) : (
+                /* Paso 2: Datos de empresa */
+                <Box>
+                  <Grid container spacing={2}>
+                    <Grid item xs={12}>
+                      <TextField
+                        fullWidth
+                        label="RUC"
+                        name="ruc"
+                        value={formData.ruc}
+                        onChange={handleChange}
+                        required
+                        inputProps={{ maxLength: 13 }}
+                      />
+                    </Grid>
+                    <Grid item xs={12}>
+                      <TextField
+                        fullWidth
+                        label="Razón Social"
+                        name="razonSocial"
+                        value={formData.razonSocial}
+                        onChange={handleChange}
+                        required
+                      />
+                    </Grid>
+                    <Grid item xs={12}>
+                      <TextField
+                        fullWidth
+                        label="Nombre Comercial"
+                        name="nombreComercial"
+                        value={formData.nombreComercial}
+                        onChange={handleChange}
+                        required
+                      />
+                    </Grid>
+                    <Grid item xs={12}>
+                      <TextField
+                        fullWidth
+                        label="Dirección Matriz"
+                        name="direccionMatriz"
+                        value={formData.direccionMatriz}
+                        onChange={handleChange}
+                        required
+                      />
+                    </Grid>
+                    <Grid item xs={6}>
+                      <TextField
+                        fullWidth
+                        label="Cód. Establecimiento"
+                        name="codigoEstablecimiento"
+                        value={formData.codigoEstablecimiento}
+                        onChange={handleChange}
+                        required
+                        inputProps={{ maxLength: 3 }}
+                      />
+                    </Grid>
+                    <Grid item xs={6}>
+                      <TextField
+                        fullWidth
+                        label="Cód. Punto Emisión"
+                        name="codigoPuntoEmision"
+                        value={formData.codigoPuntoEmision}
+                        onChange={handleChange}
+                        required
+                        inputProps={{ maxLength: 3 }}
+                      />
+                    </Grid>
+                  </Grid>
+                  <Box sx={{ display: 'flex', gap: 2, mt: 3 }}>
+                    <Button
+                      variant="outlined"
+                      onClick={handleBack}
+                      sx={{ flex: 1, py: 1.5, fontWeight: 500, borderRadius: 3 }}
+                    >
+                      Atrás
+                    </Button>
+                    <Button
+                      type="submit"
+                      variant="contained"
+                      disabled={loading}
+                      endIcon={loading ? null : <Check />}
+                      sx={{
+                        flex: 1,
+                        bgcolor: 'secondary.main',
+                        '&:hover': { bgcolor: '#E04A0F' },
+                        py: 1.5,
+                        fontWeight: 600,
+                        borderRadius: 3,
+                      }}
+                    >
+                      {loading ? 'Creando...' : 'Crear cuenta'}
+                    </Button>
+                  </Box>
+                </Box>
+              )}
+            </form>
 
-          {/* Datos de la empresa */}
-          <Typography variant="h6" sx={{ fontWeight: 600, mb: 2, fontFamily: '"Fraunces", serif' }}>
-            Datos de la empresa (Emisor)
-          </Typography>
-          <Grid container spacing={2}>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                label="RUC"
-                name="ruc"
-                value={formData.ruc}
-                onChange={handleChange}
-                required
-                inputProps={{ maxLength: 13, pattern: '[0-9]*' }}
-                helperText="13 dígitos"
-              />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                label="Código Establecimiento"
-                name="codigoEstablecimiento"
-                value={formData.codigoEstablecimiento}
-                onChange={handleChange}
-                required
-                defaultValue="001"
-                inputProps={{ maxLength: 3 }}
-              />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                label="Código Punto Emisión"
-                name="codigoPuntoEmision"
-                value={formData.codigoPuntoEmision}
-                onChange={handleChange}
-                required
-                defaultValue="001"
-                inputProps={{ maxLength: 3 }}
-              />
-            </Grid>
-            <Grid item xs={12}>
-              <TextField
-                fullWidth
-                label="Razón Social"
-                name="razonSocial"
-                value={formData.razonSocial}
-                onChange={handleChange}
-                required
-              />
-            </Grid>
-            <Grid item xs={12}>
-              <TextField
-                fullWidth
-                label="Nombre Comercial"
-                name="nombreComercial"
-                value={formData.nombreComercial}
-                onChange={handleChange}
-                required
-              />
-            </Grid>
-            <Grid item xs={12}>
-              <TextField
-                fullWidth
-                label="Dirección Matriz"
-                name="direccionMatriz"
-                value={formData.direccionMatriz}
-                onChange={handleChange}
-                required
-              />
-            </Grid>
-          </Grid>
-
-          <Box sx={{ mt: 4 }}>
-            <Button
-              fullWidth
-              variant="contained"
-              size="large"
-              type="submit"
-              disabled={loading}
-              sx={{ py: 1.5 }}
-            >
-              {loading ? <CircularProgress size={24} color="inherit" /> : 'Crear cuenta'}
-            </Button>
-          </Box>
-        </form>
-
-        <Typography variant="body2" sx={{ mt: 2, textAlign: 'center' }}>
-          ¿Ya tienes cuenta? <Link to="/login" style={{ color: 'inherit' }}>Inicia sesión</Link>
-        </Typography>
-      </Paper>
-    </Container>
+            <Typography variant="body2" sx={{ mt: 3, textAlign: 'center', color: 'text.secondary' }}>
+              ¿Ya tienes cuenta?{' '}
+              <Link to="/login" style={{ color: theme.palette.secondary.main, fontWeight: 500 }}>
+                Iniciar sesión
+              </Link>
+            </Typography>
+          </Paper>
+        </motion.div>
+      </Container>
+    </Box>
   );
 }
 
