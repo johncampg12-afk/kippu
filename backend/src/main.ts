@@ -7,7 +7,7 @@ async function bootstrap() {
   
   // Habilitar CORS para el frontend (localhost:5173)
   app.enableCors({
-    origin: 'http://localhost:5173',
+    origin: process.env.FRONTEND_URL || 'http://localhost:5173',
     credentials: true,
   });
 
@@ -17,7 +17,7 @@ async function bootstrap() {
     transform: true,
   }));
 
-  await app.listen(3000);
+  await app.listen(process.env.PORT || 3000);
   console.log(`🚀 Backend corriendo en http://localhost:3000`);
 }
 bootstrap();

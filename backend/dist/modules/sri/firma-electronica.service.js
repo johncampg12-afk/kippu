@@ -75,6 +75,7 @@ let FirmaElectronicaService = class FirmaElectronicaService {
                 privateKey: privateKeyPem,
                 publicCert: certPem,
             });
+            const xmlWithId = xml.includes('id="comprobante"') ? xml : xml.replace('<factura', '<factura id="comprobante"');
             sig.addReference({
                 xpath: "//*[local-name(.)='infoTributaria']",
                 digestAlgorithm: 'sha1',
@@ -92,7 +93,7 @@ let FirmaElectronicaService = class FirmaElectronicaService {
             });
             sig.signatureAlgorithm = 'http://www.w3.org/2000/09/xmldsig#rsa-sha1';
             sig.canonicalizationAlgorithm = 'http://www.w3.org/TR/2001/REC-xml-c14n-20010315';
-            sig.computeSignature(xml);
+            sig.computeSignature(xmlWithId);
             const xmlFirmado = sig.getSignedXml();
             const xmlFirmadoPath = xmlPath.replace('.xml', '-firmado.xml');
             fs.writeFileSync(xmlFirmadoPath, xmlFirmado, 'utf8');

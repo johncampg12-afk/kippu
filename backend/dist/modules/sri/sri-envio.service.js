@@ -53,6 +53,7 @@ const factura_entity_1 = require("../factura/entities/factura.entity");
 const fs = __importStar(require("fs"));
 const axios = __importStar(require("axios"));
 const xml2js = __importStar(require("xml2js"));
+const MODO_DESARROLLO = true;
 let SriEnvioService = class SriEnvioService {
     facturaRepo;
     constructor(facturaRepo) {
@@ -65,6 +66,28 @@ let SriEnvioService = class SriEnvioService {
         });
         if (!factura) {
             throw new common_1.BadRequestException('Factura no encontrada');
+        }
+        if (MODO_DESARROLLO) {
+            console.log(`[SRI MOCK] Simulando envío de factura ${factura.numeroComprobante}…`);
+            factura.estado = factura_entity_1.EstadoFactura.ENVIADA;
+            await this.facturaRepo.save(factura);
+            setTimeout(async () => {
+                try {
+                    factura.estado = factura_entity_1.EstadoFactura.AUTORIZADA;
+                    factura.numeroAutorizacion = factura.claveAcceso;
+                    factura.fechaAutorizacion = new Date();
+                    await this.facturaRepo.save(factura);
+                    console.log(`[SRI MOCK] Factura ${factura.numeroComprobante} AUTORIZADA (simulado)`);
+                }
+                catch (err) {
+                    console.error('[SRI MOCK] Error al simular autorización:', err);
+                }
+            }, 1000);
+            return {
+                success: true,
+                estado: 'RECIBIDA',
+                mensaje: 'Comprobante recibido por el SRI (SIMULADO – MODO DESARROLLO)',
+            };
         }
         const xmlFirmadoPath = factura.xmlPath?.replace('.xml', '-firmado.xml');
         if (!xmlFirmadoPath || !fs.existsSync(xmlFirmadoPath)) {
@@ -110,6 +133,15 @@ let SriEnvioService = class SriEnvioService {
         }
     }
     async consultarComprobante(claveAcceso, ambiente = '01') {
+        if (MODO_DESARROLLO) {
+            console.log(`[SRI MOCK] Consultando autorización para clave ${claveAcceso}…`);
+            const factura = await this.facturaRepo.findOne({ where: { claveAcceso } });
+            return {
+                estado: factura?.estado === 'AUTORIZADA' ? 'AUTORIZADO' : 'PENDIENTE',
+                numeroAutorizacion: factura?.numeroAutorizacion || null,
+                mensaje: 'Simulación de consulta (MODO DESARROLLO)',
+            };
+        }
         const urlAutorizacion = ambiente === '01'
             ? 'https://celcer.sri.gob.ec/comprobantes-electronicos-ws/AutorizacionComprobantesOffline?wsdl'
             : 'https://cel.sri.gob.ec/comprobantes-electronicos-ws/AutorizacionComprobantesOffline?wsdl';

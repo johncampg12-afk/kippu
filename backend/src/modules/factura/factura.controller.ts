@@ -1,12 +1,14 @@
-import { Controller, Get, Post, Body, Param, Query, Res } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Query, Res, UseGuards, Request } from '@nestjs/common';
 import type { Response } from 'express';
 import { FacturaService } from './factura.service';
 import { CreateFacturaDto } from './dto/create-factura.dto';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Between } from 'typeorm';
+import { Repository } from 'typeorm';
 import { Factura } from './entities/factura.entity';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import * as ExcelJS from 'exceljs';
 
+@UseGuards(JwtAuthGuard) // 🔒 Protege todo el controlador
 @Controller('factura')
 export class FacturaController {
   constructor(
@@ -16,28 +18,29 @@ export class FacturaController {
   ) {}
 
   @Post()
-  create(@Body() createFacturaDto: CreateFacturaDto) {
+  create(@Body() createFacturaDto: CreateFacturaDto, @Request() req) {
+    // Forzar empresaId desde el token JWT
+    createFacturaDto.empresaId = req.user.empresaId;
     return this.facturaService.create(createFacturaDto);
   }
 
   @Get()
   async findAll(
-    @Query('empresaId') empresaId?: string,
+    @Request() req,
     @Query('fechaInicio') fechaInicio?: string,
     @Query('fechaFin') fechaFin?: string,
     @Query('cliente') cliente?: string,
     @Query('estado') estado?: string,
   ) {
+    const empresaId = req.user.empresaId; // ✅ Del token, no del query
+
     const queryBuilder = this.facturaRepo
       .createQueryBuilder('f')
       .leftJoinAndSelect('f.cliente', 'c')
       .leftJoinAndSelect('f.detalles', 'd')
+      .where('f.empresaId = :empresaId', { empresaId })
       .orderBy('f.fechaEmision', 'DESC')
       .addOrderBy('f.numeroComprobante', 'DESC');
-
-    if (empresaId) {
-      queryBuilder.andWhere('f.empresaId = :empresaId', { empresaId });
-    }
 
     if (fechaInicio && fechaFin) {
       queryBuilder.andWhere('f.fechaEmision BETWEEN :inicio AND :fin', {
@@ -59,14 +62,15 @@ export class FacturaController {
     return queryBuilder.getMany();
   }
 
-  @Get('estadisticas/:empresaId')
-  async getEstadisticas(@Param('empresaId') empresaId: string) {
+  @Get('estadisticas')
+  async getEstadisticas(@Request() req) {
+    const empresaId = req.user.empresaId;
     const ahora = new Date();
     const inicioMes = new Date(ahora.getFullYear(), ahora.getMonth(), 1);
     const finMes = new Date(ahora.getFullYear(), ahora.getMonth() + 1, 0);
     const hoy = ahora.toISOString().split('T')[0];
 
-    // Estadísticas del mes - SQL PURO (no memoria)
+    // Estadísticas del mes - SQL PURO
     const statsMes = await this.facturaRepo
       .createQueryBuilder('f')
       .select('COUNT(f.id)', 'facturasMes')
@@ -100,13 +104,15 @@ export class FacturaController {
     };
   }
 
-  @Get('exportar/:empresaId')
+  @Get('exportar')
   async exportarExcel(
-    @Param('empresaId') empresaId: string,
+    @Request() req,
     @Query('fechaInicio') fechaInicio: string,
     @Query('fechaFin') fechaFin: string,
     @Res() res: Response,
   ) {
+    const empresaId = req.user.empresaId;
+
     const queryBuilder = this.facturaRepo
       .createQueryBuilder('f')
       .leftJoinAndSelect('f.cliente', 'c')

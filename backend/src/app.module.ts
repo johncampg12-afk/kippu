@@ -9,11 +9,13 @@ import { ProductoModule } from './modules/producto/producto.module';
 import { CertificadoModule } from './modules/certificado/certificado.module';
 import { FacturaModule } from './modules/factura/factura.module';
 import { SriModule } from './modules/sri/sri.module';
+import { AuthModule } from './modules/auth/auth.module';  
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
+      envFilePath: ['.env.production', '.env'],
     }),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
@@ -25,7 +27,10 @@ import { SriModule } from './modules/sri/sri.module';
         password: configService.get('DB_PASSWORD'),
         database: configService.get('DB_DATABASE'),
         entities: [__dirname + '/**/*.entity{.ts,.js}'],
-        synchronize: true, // SOLO en desarrollo. En producción false
+        synchronize: true,
+        ssl: {
+          rejectUnauthorized: false, // Obligatorio para Neon
+        },
         logging: true,
       }),
       inject: [ConfigService],
@@ -36,6 +41,7 @@ import { SriModule } from './modules/sri/sri.module';
     CertificadoModule,
     FacturaModule,
     SriModule,
+    AuthModule
   ],
   controllers: [AppController],
   providers: [AppService],
