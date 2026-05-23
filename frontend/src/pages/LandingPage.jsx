@@ -64,7 +64,7 @@ const tools = [
   },
 ];
 
-// Componente Carrusel
+// Componente Carrusel (transiciones suaves mejoradas)
 function ToolsCarousel() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isAutoPlaying, setIsAutoPlaying] = useState(true);
@@ -76,7 +76,7 @@ function ToolsCarousel() {
     if (isAutoPlaying && !isPaused) {
       intervalRef.current = setInterval(() => {
         setCurrentIndex((prev) => (prev + 1) % total);
-      }, 2000);
+      }, 3000); // intervalo más largo para apreciar la suavidad
     } else if (intervalRef.current) {
       clearInterval(intervalRef.current);
       intervalRef.current = null;
@@ -108,20 +108,23 @@ function ToolsCarousel() {
     setIsPaused(!isPaused);
   };
 
-  // Calcula propiedades para cada tarjeta según su posición respecto al índice actual
+  // Propiedades suaves: sin blur, movimiento lateral completo
   const getCardProps = (index) => {
     const diff = (index - currentIndex + total) % total;
     if (diff === 0) {
-      return { scale: 1, opacity: 1, zIndex: 10, x: 0, blur: 0, display: true };
+      // Activa
+      return { scale: 1, opacity: 1, zIndex: 10, x: '0%', blur: 0, display: true };
     }
     if (diff === 1) {
-      return { scale: 0.85, opacity: 0.7, zIndex: 5, x: '30%', blur: 4, display: true };
+      // Siguiente a la derecha
+      return { scale: 0.9, opacity: 0.6, zIndex: 5, x: '110%', blur: 0, display: true };
     }
     if (diff === total - 1) {
-      return { scale: 0.85, opacity: 0.7, zIndex: 5, x: '-30%', blur: 4, display: true };
+      // Anterior a la izquierda
+      return { scale: 0.9, opacity: 0.6, zIndex: 5, x: '-110%', blur: 0, display: true };
     }
-    // El resto las ocultamos por completo (no se renderizan)
-    return { scale: 0.7, opacity: 0, zIndex: 0, x: '0%', blur: 8, display: false };
+    // El resto ocultas
+    return { scale: 0.8, opacity: 0, zIndex: 0, x: '0%', blur: 0, display: false };
   };
 
   return (
@@ -144,11 +147,11 @@ function ToolsCarousel() {
         </IconButton>
       </Box>
 
-      {/* Tarjetas */}
-      <Box sx={{ position: 'relative', display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 400 }}>
+      {/* Contenedor de tarjetas */}
+      <Box sx={{ position: 'relative', display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 420 }}>
         {tools.map((tool, idx) => {
           const props = getCardProps(idx);
-          if (!props.display) return null; // No renderizar tarjetas ocultas para evitar interferencias
+          if (!props.display) return null;
           const isActive = idx === currentIndex;
 
           return (
@@ -160,7 +163,7 @@ function ToolsCarousel() {
                 maxWidth: 400,
                 background: '#fff',
                 borderRadius: 16,
-                boxShadow: '0 4px 20px rgba(0,0,0,0.06)',
+                boxShadow: isActive ? '0 8px 30px rgba(0,0,0,0.08)' : '0 4px 20px rgba(0,0,0,0.06)',
                 border: '1px solid #E5E7EB',
                 padding: 24,
                 cursor: 'pointer',
@@ -172,7 +175,11 @@ function ToolsCarousel() {
                 filter: `blur(${props.blur}px)`,
                 zIndex: props.zIndex,
               }}
-              transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+              transition={{
+                type: 'tween',
+                duration: 0.5,
+                ease: 'easeInOut',
+              }}
               onClick={() => goTo(idx)}
               onMouseEnter={() => setIsPaused(true)}
               onMouseLeave={() => setIsPaused(false)}
@@ -360,7 +367,7 @@ export default function LandingPage() {
                 component="img"
                 src="/kipu_condor.jpg"
                 alt="KIPPU"
-                sx={{ width: 40, height: 40, borderRadius: 2, objectFit: 'cover' }}  // Logo más grande
+                sx={{ width: 40, height: 40, borderRadius: 2, objectFit: 'cover' }}
               />
             </motion.div>
             <Typography
@@ -402,7 +409,7 @@ export default function LandingPage() {
               sx={{
                 color: 'text.secondary',
                 fontWeight: 500,
-                boxShadow: '0 2px 6px rgba(0,0,0,0.08)', // Sombra añadida
+                boxShadow: '0 2px 6px rgba(0,0,0,0.08)',
                 '&:hover': { boxShadow: '0 2px 10px rgba(0,0,0,0.12)' },
               }}
             >
