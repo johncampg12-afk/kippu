@@ -5,7 +5,6 @@ import { useTheme } from '@mui/material/styles';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
-import kipuLogo from '../assets/kipu_condor.jpg'; // Ajusta la ruta si es necesario
 
 function LoginPage() {
   const theme = useTheme();
@@ -130,7 +129,7 @@ function LoginPage() {
                 <Link to="/" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, textDecoration: 'none' }}>
                   <Box
                     component="img"
-                    src={kipuLogo}
+                    src="/kipu_condor.jpg"
                     alt="KIPU"
                     sx={{ width: 36, height: 36, borderRadius: 2, objectFit: 'cover' }}
                   />
