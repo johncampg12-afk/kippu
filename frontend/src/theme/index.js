@@ -1,0 +1,1 @@
+export { lightTheme, darkTheme, theme } from './kipuTheme';
