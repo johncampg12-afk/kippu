@@ -1,0 +1,7 @@
+node_modules/ 
+.env 
+uploads/ 
+dist/ 
+logs/ 
+*.p12 
+*.pfx 
