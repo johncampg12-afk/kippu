@@ -2,13 +2,13 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
-  Box, Typography, Button, Container, Grid, Paper, Chip,
+  Box, Typography, Button, Container, Grid, Paper, Chip, IconButton,
 } from '@mui/material';
 import {
   Receipt, Security, Speed, CheckCircle, TrendingUp,
   Description, CloudUpload, Analytics, PriceCheck,
-  History, SupportAgent, ArrowForward,
-  ChevronLeft, ChevronRight, Pause, Play,
+  History, ArrowForward, PlayArrow, PauseCircle,
+  NavigateBefore, NavigateNext,
 } from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';
 
@@ -121,18 +121,18 @@ function ToolsCarousel() {
       {/* Controles */}
       <Box sx={{ display: 'flex', justifyContent: 'center', gap: 1.5, mb: 4 }}>
         <IconButton onClick={prev} sx={{ bgcolor: 'background.paper', border: '1px solid', borderColor: 'divider', boxShadow: 1 }}>
-          <ChevronLeft />
+          <NavigateBefore />
         </IconButton>
         <Button
           onClick={toggleAutoPlay}
           variant="outlined"
-          startIcon={isPaused ? <Play /> : <Pause />}
+          startIcon={isPaused ? <PlayArrow /> : <PauseCircle />}
           size="small"
         >
           {isPaused ? 'Play' : 'Pause'}
         </Button>
         <IconButton onClick={next} sx={{ bgcolor: 'background.paper', border: '1px solid', borderColor: 'divider', boxShadow: 1 }}>
-          <ChevronRight />
+          <NavigateNext />
         </IconButton>
       </Box>
 
