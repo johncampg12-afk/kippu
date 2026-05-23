@@ -11,7 +11,6 @@ import {
   ChevronLeft, ChevronRight, Pause, Play,
 } from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';
-import kipuLogo from '../assets/kipu_condor.jpg'; // Ajusta la ruta si es necesario
 
 // Datos de las herramientas para el carrusel
 const tools = [
@@ -352,7 +351,7 @@ export default function LandingPage() {
             <motion.div whileHover={{ scale: 1.05, rotate: 2 }} transition={{ type: 'spring', stiffness: 400 }}>
               <Box
                 component="img"
-                src={kipuLogo}
+                src="/kipu_condor.jpg"
                 alt="KIPU"
                 sx={{ width: 32, height: 32, borderRadius: 2, objectFit: 'cover' }}
               />
