@@ -108,12 +108,20 @@ function ToolsCarousel() {
     setIsPaused(!isPaused);
   };
 
-  const getCardStyle = (index) => {
+  // Calcula propiedades para cada tarjeta según su posición respecto al índice actual
+  const getCardProps = (index) => {
     const diff = (index - currentIndex + total) % total;
-    if (diff === 0) return { scale: 1, opacity: 1, zIndex: 10, x: 0, blur: 0 };
-    if (diff === 1) return { scale: 0.85, opacity: 0.7, zIndex: 5, x: '30%', blur: 4 };
-    if (diff === total - 1) return { scale: 0.85, opacity: 0.7, zIndex: 5, x: '-30%', blur: 4 };
-    return { scale: 0.7, opacity: 0.3, zIndex: 0, x: diff === 2 ? '60%' : '-60%', blur: 8, display: 'none' };
+    if (diff === 0) {
+      return { scale: 1, opacity: 1, zIndex: 10, x: 0, blur: 0, display: true };
+    }
+    if (diff === 1) {
+      return { scale: 0.85, opacity: 0.7, zIndex: 5, x: '30%', blur: 4, display: true };
+    }
+    if (diff === total - 1) {
+      return { scale: 0.85, opacity: 0.7, zIndex: 5, x: '-30%', blur: 4, display: true };
+    }
+    // El resto las ocultamos por completo (no se renderizan)
+    return { scale: 0.7, opacity: 0, zIndex: 0, x: '0%', blur: 8, display: false };
   };
 
   return (
@@ -139,14 +147,15 @@ function ToolsCarousel() {
       {/* Tarjetas */}
       <Box sx={{ position: 'relative', display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 400 }}>
         {tools.map((tool, idx) => {
-          const style = getCardStyle(idx);
-          if (style.display === 'none') return null;
+          const props = getCardProps(idx);
+          if (!props.display) return null; // No renderizar tarjetas ocultas para evitar interferencias
           const isActive = idx === currentIndex;
+
           return (
             <motion.div
               key={tool.id}
-              className="absolute cursor-pointer"
               style={{
+                position: 'absolute',
                 width: '100%',
                 maxWidth: 400,
                 background: '#fff',
@@ -154,16 +163,14 @@ function ToolsCarousel() {
                 boxShadow: '0 4px 20px rgba(0,0,0,0.06)',
                 border: '1px solid #E5E7EB',
                 padding: 24,
-                scale: style.scale,
-                opacity: style.opacity,
-                zIndex: style.zIndex,
-                filter: `blur(${style.blur}px)`,
+                cursor: 'pointer',
               }}
               animate={{
-                x: style.x,
-                scale: style.scale,
-                opacity: style.opacity,
-                filter: `blur(${style.blur}px)`,
+                x: props.x,
+                scale: props.scale,
+                opacity: props.opacity,
+                filter: `blur(${props.blur}px)`,
+                zIndex: props.zIndex,
               }}
               transition={{ type: 'spring', stiffness: 300, damping: 30 }}
               onClick={() => goTo(idx)}
@@ -352,20 +359,20 @@ export default function LandingPage() {
               <Box
                 component="img"
                 src="/kipu_condor.jpg"
-                alt="KIPU"
-                sx={{ width: 32, height: 32, borderRadius: 2, objectFit: 'cover' }}
+                alt="KIPPU"
+                sx={{ width: 40, height: 40, borderRadius: 2, objectFit: 'cover' }}  // Logo más grande
               />
             </motion.div>
             <Typography
               sx={{
                 fontFamily: '"Fraunces", serif',
-                fontSize: 22,
+                fontSize: 24,
                 fontWeight: 600,
                 color: 'primary.main',
                 letterSpacing: '-0.02em',
               }}
             >
-              kipu
+              KIPPU
             </Typography>
           </Link>
 
@@ -388,7 +395,17 @@ export default function LandingPage() {
                 Comenzar gratis
               </Button>
             </motion.div>
-            <Button component={Link} to="/login" variant="text" sx={{ color: 'text.secondary', fontWeight: 500 }}>
+            <Button
+              component={Link}
+              to="/login"
+              variant="text"
+              sx={{
+                color: 'text.secondary',
+                fontWeight: 500,
+                boxShadow: '0 2px 6px rgba(0,0,0,0.08)', // Sombra añadida
+                '&:hover': { boxShadow: '0 2px 10px rgba(0,0,0,0.12)' },
+              }}
+            >
               Iniciar sesión
             </Button>
           </Box>
@@ -487,14 +504,14 @@ export default function LandingPage() {
               Empieza a facturar en <span style={{ color: '#FF5A1F' }}>menos de 2 minutos</span>
             </Typography>
             <Typography variant="body1" color="text.secondary" sx={{ maxWidth: 600, mx: 'auto' }}>
-              KIPU aprende de tus clientes frecuentes y automatiza todo el proceso fiscal.
+              KIPPU aprende de tus clientes frecuentes y automatiza todo el proceso fiscal.
             </Typography>
           </Box>
           <Grid container spacing={4} alignItems="center">
             <Grid item xs={12} md={6}>
               {[
                 { num: '1', title: 'Registra tu empresa', desc: 'Sube tu certificado .p12 y configura los datos del emisor.' },
-                { num: '2', title: 'Valida RUC automáticamente', desc: 'Escribe un RUC y KIPU lo valida con el algoritmo oficial del SRI.' },
+                { num: '2', title: 'Valida RUC automáticamente', desc: 'Escribe un RUC y KIPPU lo valida con el algoritmo oficial del SRI.' },
                 { num: '3', title: 'Emite la factura', desc: 'Agrega productos, calcula IVA 15% y guarda. XML y PDF se generan al instante.' },
                 { num: '4', title: 'Envía al SRI', desc: 'Firma el comprobante y envíalo al Web Service del SRI con un clic.' },
               ].map((step) => (
@@ -532,11 +549,11 @@ export default function LandingPage() {
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 3 }}>
                   <Security sx={{ color: 'secondary.main', fontSize: 28 }} />
                   <Typography variant="h6" fontWeight={600} color="text.primary">
-                    ¿Por qué KIPU?
+                    ¿Por qué KIPPU?
                   </Typography>
                 </Box>
                 <Typography variant="body2" color="text.secondary" paragraph>
-                  A diferencia de otras herramientas, KIPU no depende de APIs externas que fallan. Validamos el RUC con el algoritmo oficial del SRI y guardamos los datos localmente para que la próxima consulta sea instantánea.
+                  A diferencia de otras herramientas, KIPPU no depende de APIs externas que fallan. Validamos el RUC con el algoritmo oficial del SRI y guardamos los datos localmente para que la próxima consulta sea instantánea.
                 </Typography>
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
                   {[
@@ -565,7 +582,7 @@ export default function LandingPage() {
               <span style={{ color: '#FF5A1F' }}>facturar en Ecuador</span>
             </Typography>
             <Typography variant="body1" color="text.secondary" sx={{ maxWidth: 600, mx: 'auto' }}>
-              KIPU integra validación, cálculo de impuestos, generación de documentos y envío al SRI en un solo lugar.
+              KIPPU integra validación, cálculo de impuestos, generación de documentos y envío al SRI en un solo lugar.
             </Typography>
           </Box>
           <ToolsCarousel />
@@ -612,7 +629,7 @@ export default function LandingPage() {
               ¿Listo para automatizar tu facturación?
             </Typography>
             <Typography variant="body1" color="text.secondary" sx={{ mb: 4, maxWidth: 500, mx: 'auto' }}>
-              Únete a los negocios ecuatorianos que ya confían en KIPU para emitir sus comprobantes electrónicos.
+              Únete a los negocios ecuatorianos que ya confían en KIPPU para emitir sus comprobantes electrónicos.
             </Typography>
             <Button
               component={Link}
@@ -647,7 +664,7 @@ export default function LandingPage() {
             <Link to="/contact" style={{ color: '#5C544B', textDecoration: 'none', fontSize: '0.875rem' }}>Contacto</Link>
           </Box>
           <Typography variant="body2" color="text.secondary">
-            &copy; {new Date().getFullYear()} KIPU — Facturación Electrónica Ecuador
+            &copy; {new Date().getFullYear()} KIPPU — Facturación Electrónica Ecuador
           </Typography>
         </Container>
       </Box>
