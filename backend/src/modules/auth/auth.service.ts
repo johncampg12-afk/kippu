@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
+import { OAuth2Client } from 'google-auth-library';
 import { User } from './entities/user.entity';
 import { Empresa } from '../empresa/entities/empresa.entity';
 import { RegisterDto } from './dto/register.dto';
@@ -58,6 +59,56 @@ export class AuthService {
     if (!isPasswordValid) throw new UnauthorizedException('Credenciales inválidas');
 
     return this.generateToken(user, user.empresa);
+  }
+
+  async googleLogin(googleToken: string) {
+    const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+
+    try {
+      const ticket = await client.verifyIdToken({
+        idToken: googleToken,
+        audience: process.env.GOOGLE_CLIENT_ID,
+      });
+
+      const payload = ticket.getPayload();
+      if (!payload || !payload.email) {
+        throw new UnauthorizedException('Token de Google inválido');
+      }
+
+      const { email, name } = payload;
+
+      // Buscar usuario por email
+      let user = await this.userRepo.findOne({ where: { email }, relations: ['empresa'] });
+
+      if (!user) {
+        // Crear empresa temporal (datos se completarán dentro de la app)
+        const empresa = this.empresaRepo.create({
+          ruc: 'PENDIENTE',
+          razonSocial: name || email,
+          nombreComercial: name || email,
+          direccionMatriz: 'PENDIENTE',
+          codigoEstablecimiento: '001',
+          codigoPuntoEmision: '001',
+          obligadoContabilidad: false,
+        });
+        const empresaGuardada = await this.empresaRepo.save(empresa);
+
+        // Crear usuario sin contraseña
+        user = this.userRepo.create({
+          name: name || email,
+          email,
+          password: '', // Usuario de Google no tiene contraseña local
+          empresaId: empresaGuardada.id,
+        });
+        await this.userRepo.save(user);
+        user.empresa = empresaGuardada;
+      }
+
+      return this.generateToken(user, user.empresa);
+    } catch (error) {
+      if (error instanceof UnauthorizedException) throw error;
+      throw new UnauthorizedException('Error al verificar token de Google');
+    }
   }
 
   async getProfile(userId: string) {
