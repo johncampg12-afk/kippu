@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Box, Container, Paper, Typography, TextField, Button, Alert, IconButton, InputAdornment,
+  Box, Container, Paper, Typography, TextField, Button, Alert, IconButton, InputAdornment, Divider,
 } from '@mui/material';
-import { Visibility, VisibilityOff, ArrowForward } from '@mui/icons-material';
+import { Visibility, VisibilityOff, ArrowForward, Google as GoogleIcon } from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
+import { useGoogleLogin } from '@react-oauth/google';
+import api from '../services/api';
 
 function RegisterPage() {
   const theme = useTheme();
@@ -17,11 +19,28 @@ function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [particles, setParticles] = useState([]);
 
-  // Solo datos de cuenta
+  // Datos de cuenta (solo nombre, email, contraseña; la empresa se configura dentro de la app)
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     password: '',
+  });
+
+  // Registro con Google
+  const googleRegister = useGoogleLogin({
+    onSuccess: async (tokenResponse) => {
+      try {
+        const response = await api.post('/auth/google', {
+          token: tokenResponse.access_token,
+        });
+        localStorage.setItem('token', response.data.access_token);
+        api.defaults.headers.common['Authorization'] = `Bearer ${response.data.access_token}`;
+        navigate('/dashboard');
+      } catch (error) {
+        setError('Error al registrarse con Google');
+      }
+    },
+    onError: () => setError('Error al registrarse con Google'),
   });
 
   // Partículas flotantes
@@ -223,6 +242,33 @@ function RegisterPage() {
                 {loading ? 'Creando cuenta...' : 'Crear cuenta'}
               </Button>
             </form>
+
+            {/* Separador y botón de Google */}
+            <Divider sx={{ my: 3 }}>
+              <Typography variant="body2" color="text.secondary">
+                o
+              </Typography>
+            </Divider>
+
+            <Button
+              fullWidth
+              variant="outlined"
+              startIcon={<GoogleIcon />}
+              onClick={() => googleRegister()}
+              sx={{
+                py: 1.5,
+                fontWeight: 500,
+                borderRadius: 3,
+                borderColor: 'divider',
+                color: 'text.primary',
+                '&:hover': {
+                  borderColor: 'primary.main',
+                  bgcolor: 'background.default',
+                },
+              }}
+            >
+              Registrarse con Google
+            </Button>
 
             <Typography variant="body2" sx={{ mt: 3, textAlign: 'center', color: 'text.secondary' }}>
               ¿Ya tienes cuenta?{' '}
