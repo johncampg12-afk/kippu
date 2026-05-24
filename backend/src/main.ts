@@ -4,24 +4,27 @@ import { ValidationPipe } from '@nestjs/common';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  
-  // Habilitar CORS para el frontend (localhost + producción con y sin www)
+
+  // Configuración CORS explícita (no depende de variables de entorno)
   app.enableCors({
     origin: [
       'http://localhost:5173',
       'https://kippulab.com',
       'https://www.kippulab.com',
     ],
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
+    allowedHeaders: 'Content-Type,Authorization',
     credentials: true,
+    preflightContinue: false,
+    optionsSuccessStatus: 204,
   });
 
-  // Validación global de DTOs
   app.useGlobalPipes(new ValidationPipe({
     whitelist: true,
     transform: true,
   }));
 
   await app.listen(process.env.PORT || 3000);
-  console.log(`🚀 Backend corriendo en http://localhost:3000`);
+  console.log(`🚀 Backend corriendo en puerto ${process.env.PORT || 3000}`);
 }
 bootstrap();

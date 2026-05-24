@@ -41,7 +41,7 @@ import { AuthModule } from './modules/auth/auth.module';
     CertificadoModule,
     FacturaModule,
     SriModule,
-    AuthModule
+    AuthModule,
   ],
   controllers: [AppController],
   providers: [AppService],
