@@ -31,7 +31,7 @@ function RegisterPage() {
     onSuccess: async (tokenResponse) => {
       try {
         const response = await api.post('/auth/google', {
-          token: tokenResponse.access_token,
+          token: tokenResponse.credential,
         });
         localStorage.setItem('token', response.data.access_token);
         api.defaults.headers.common['Authorization'] = `Bearer ${response.data.access_token}`;

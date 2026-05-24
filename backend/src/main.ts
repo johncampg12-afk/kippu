@@ -5,9 +5,13 @@ import { ValidationPipe } from '@nestjs/common';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   
-  // Habilitar CORS para el frontend (localhost:5173)
+  // Habilitar CORS para el frontend (localhost + producción con y sin www)
   app.enableCors({
-    origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+    origin: [
+      'http://localhost:5173',
+      'https://kippulab.com',
+      'https://www.kippulab.com',
+    ],
     credentials: true,
   });
 
