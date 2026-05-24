@@ -130,7 +130,7 @@ function LoginPage() {
                   <Box
                     component="img"
                     src="/kipu_condor.jpg"
-                    alt="KIPU"
+                    alt="KIPPU"
                     sx={{ width: 36, height: 36, borderRadius: 2, objectFit: 'cover' }}
                   />
                   <Typography
@@ -142,7 +142,7 @@ function LoginPage() {
                       letterSpacing: '-0.02em',
                     }}
                   >
-                    kipu
+                    kippu
                   </Typography>
                 </Link>
               </motion.div>

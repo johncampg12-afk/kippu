@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Box, Container, Paper, Typography, TextField, Button, Alert, IconButton,
-  InputAdornment, Grid, Stepper, Step, StepLabel,
+  Box, Container, Paper, Typography, TextField, Button, Alert, IconButton, InputAdornment,
 } from '@mui/material';
-import { Visibility, VisibilityOff, ArrowForward, Check } from '@mui/icons-material';
+import { Visibility, VisibilityOff, ArrowForward } from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
@@ -13,26 +12,19 @@ function RegisterPage() {
   const theme = useTheme();
   const { register } = useAuth();
   const navigate = useNavigate();
-  const [activeStep, setActiveStep] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [showPassword, setShowPassword] = useState(false);
   const [particles, setParticles] = useState([]);
 
-  // Datos del formulario
+  // Solo datos de cuenta
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     password: '',
-    ruc: '',
-    razonSocial: '',
-    nombreComercial: '',
-    direccionMatriz: '',
-    codigoEstablecimiento: '001',
-    codigoPuntoEmision: '001',
   });
 
-  // Partículas
+  // Partículas flotantes
   useEffect(() => {
     const newParticles = [];
     for (let i = 0; i < 120; i++) {
@@ -74,14 +66,12 @@ function RegisterPage() {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleNext = () => setActiveStep(1);
-  const handleBack = () => setActiveStep(0);
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(null);
     setLoading(true);
     try {
+      // El registro solo pide nombre, email y contraseña
       await register(formData);
       navigate('/dashboard');
     } catch (err) {
@@ -90,8 +80,6 @@ function RegisterPage() {
       setLoading(false);
     }
   };
-
-  const steps = ['Cuenta', 'Empresa'];
 
   return (
     <Box
@@ -127,7 +115,7 @@ function RegisterPage() {
       </Box>
 
       {/* Formulario */}
-      <Container maxWidth="sm" sx={{ position: 'relative', zIndex: 1 }}>
+      <Container maxWidth="xs" sx={{ position: 'relative', zIndex: 1 }}>
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -149,7 +137,7 @@ function RegisterPage() {
                 <Box
                   component="img"
                   src="/kipu_condor.jpg"
-                  alt="KIPU"
+                  alt="KIPPU"
                   sx={{ width: 36, height: 36, borderRadius: 2, objectFit: 'cover' }}
                 />
                 <Typography
@@ -161,24 +149,16 @@ function RegisterPage() {
                     letterSpacing: '-0.02em',
                   }}
                 >
-                  kipu
+                  kippu
                 </Typography>
               </Link>
               <Typography variant="h5" fontWeight={700} color="text.primary" mt={1}>
                 Crear cuenta
               </Typography>
               <Typography variant="body2" color="text.secondary" mt={0.5}>
-                Configura tu empresa y empieza a facturar
+                Empieza a facturar en segundos
               </Typography>
             </Box>
-
-            <Stepper activeStep={activeStep} alternativeLabel sx={{ mb: 4 }}>
-              {steps.map((label) => (
-                <Step key={label}>
-                  <StepLabel>{label}</StepLabel>
-                </Step>
-              ))}
-            </Stepper>
 
             {error && (
               <Alert severity="error" sx={{ mb: 2 }}>
@@ -187,159 +167,61 @@ function RegisterPage() {
             )}
 
             <form onSubmit={handleSubmit}>
-              {activeStep === 0 ? (
-                /* Paso 1: Datos de cuenta */
-                <Box>
-                  <TextField
-                    fullWidth
-                    label="Nombre completo"
-                    name="name"
-                    value={formData.name}
-                    onChange={handleChange}
-                    required
-                    sx={{ mb: 2 }}
-                  />
-                  <TextField
-                    fullWidth
-                    label="Email"
-                    name="email"
-                    type="email"
-                    value={formData.email}
-                    onChange={handleChange}
-                    required
-                    sx={{ mb: 2 }}
-                  />
-                  <TextField
-                    fullWidth
-                    label="Contraseña"
-                    name="password"
-                    type={showPassword ? 'text' : 'password'}
-                    value={formData.password}
-                    onChange={handleChange}
-                    required
-                    sx={{ mb: 3 }}
-                    helperText="Mínimo 8 caracteres"
-                    InputProps={{
-                      endAdornment: (
-                        <InputAdornment position="end">
-                          <IconButton onClick={() => setShowPassword(!showPassword)} edge="end">
-                            {showPassword ? <VisibilityOff /> : <Visibility />}
-                          </IconButton>
-                        </InputAdornment>
-                      ),
-                    }}
-                  />
-                  <Button
-                    fullWidth
-                    variant="contained"
-                    onClick={handleNext}
-                    endIcon={<ArrowForward />}
-                    sx={{
-                      bgcolor: 'secondary.main',
-                      '&:hover': { bgcolor: '#E04A0F' },
-                      py: 1.5,
-                      fontWeight: 600,
-                      borderRadius: 3,
-                    }}
-                  >
-                    Siguiente
-                  </Button>
-                </Box>
-              ) : (
-                /* Paso 2: Datos de empresa */
-                <Box>
-                  <Grid container spacing={2}>
-                    <Grid item xs={12}>
-                      <TextField
-                        fullWidth
-                        label="RUC"
-                        name="ruc"
-                        value={formData.ruc}
-                        onChange={handleChange}
-                        required
-                        inputProps={{ maxLength: 13 }}
-                      />
-                    </Grid>
-                    <Grid item xs={12}>
-                      <TextField
-                        fullWidth
-                        label="Razón Social"
-                        name="razonSocial"
-                        value={formData.razonSocial}
-                        onChange={handleChange}
-                        required
-                      />
-                    </Grid>
-                    <Grid item xs={12}>
-                      <TextField
-                        fullWidth
-                        label="Nombre Comercial"
-                        name="nombreComercial"
-                        value={formData.nombreComercial}
-                        onChange={handleChange}
-                        required
-                      />
-                    </Grid>
-                    <Grid item xs={12}>
-                      <TextField
-                        fullWidth
-                        label="Dirección Matriz"
-                        name="direccionMatriz"
-                        value={formData.direccionMatriz}
-                        onChange={handleChange}
-                        required
-                      />
-                    </Grid>
-                    <Grid item xs={6}>
-                      <TextField
-                        fullWidth
-                        label="Cód. Establecimiento"
-                        name="codigoEstablecimiento"
-                        value={formData.codigoEstablecimiento}
-                        onChange={handleChange}
-                        required
-                        inputProps={{ maxLength: 3 }}
-                      />
-                    </Grid>
-                    <Grid item xs={6}>
-                      <TextField
-                        fullWidth
-                        label="Cód. Punto Emisión"
-                        name="codigoPuntoEmision"
-                        value={formData.codigoPuntoEmision}
-                        onChange={handleChange}
-                        required
-                        inputProps={{ maxLength: 3 }}
-                      />
-                    </Grid>
-                  </Grid>
-                  <Box sx={{ display: 'flex', gap: 2, mt: 3 }}>
-                    <Button
-                      variant="outlined"
-                      onClick={handleBack}
-                      sx={{ flex: 1, py: 1.5, fontWeight: 500, borderRadius: 3 }}
-                    >
-                      Atrás
-                    </Button>
-                    <Button
-                      type="submit"
-                      variant="contained"
-                      disabled={loading}
-                      endIcon={loading ? null : <Check />}
-                      sx={{
-                        flex: 1,
-                        bgcolor: 'secondary.main',
-                        '&:hover': { bgcolor: '#E04A0F' },
-                        py: 1.5,
-                        fontWeight: 600,
-                        borderRadius: 3,
-                      }}
-                    >
-                      {loading ? 'Creando...' : 'Crear cuenta'}
-                    </Button>
-                  </Box>
-                </Box>
-              )}
+              <TextField
+                fullWidth
+                label="Nombre completo"
+                name="name"
+                value={formData.name}
+                onChange={handleChange}
+                required
+                sx={{ mb: 2 }}
+              />
+              <TextField
+                fullWidth
+                label="Email"
+                name="email"
+                type="email"
+                value={formData.email}
+                onChange={handleChange}
+                required
+                sx={{ mb: 2 }}
+              />
+              <TextField
+                fullWidth
+                label="Contraseña"
+                name="password"
+                type={showPassword ? 'text' : 'password'}
+                value={formData.password}
+                onChange={handleChange}
+                required
+                sx={{ mb: 3 }}
+                helperText="Mínimo 8 caracteres"
+                InputProps={{
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton onClick={() => setShowPassword(!showPassword)} edge="end">
+                        {showPassword ? <VisibilityOff /> : <Visibility />}
+                      </IconButton>
+                    </InputAdornment>
+                  ),
+                }}
+              />
+              <Button
+                fullWidth
+                type="submit"
+                variant="contained"
+                disabled={loading}
+                endIcon={<ArrowForward />}
+                sx={{
+                  bgcolor: 'secondary.main',
+                  '&:hover': { bgcolor: '#E04A0F' },
+                  py: 1.5,
+                  fontWeight: 600,
+                  borderRadius: 3,
+                }}
+              >
+                {loading ? 'Creando cuenta...' : 'Crear cuenta'}
+              </Button>
             </form>
 
             <Typography variant="body2" sx={{ mt: 3, textAlign: 'center', color: 'text.secondary' }}>
