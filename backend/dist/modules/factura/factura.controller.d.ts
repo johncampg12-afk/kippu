@@ -7,13 +7,13 @@ export declare class FacturaController {
     private readonly facturaService;
     private facturaRepo;
     constructor(facturaService: FacturaService, facturaRepo: Repository<Factura>);
-    create(createFacturaDto: CreateFacturaDto): Promise<Factura>;
-    findAll(empresaId?: string, fechaInicio?: string, fechaFin?: string, cliente?: string, estado?: string): Promise<Factura[]>;
-    getEstadisticas(empresaId: string): Promise<{
+    create(createFacturaDto: CreateFacturaDto, req: any): Promise<Factura>;
+    findAll(req: any, fechaInicio?: string, fechaFin?: string, cliente?: string, estado?: string): Promise<Factura[]>;
+    getEstadisticas(req: any): Promise<{
         facturasMes: number;
         totalMes: number;
         porCobrar: number;
         vencenHoy: number;
     }>;
-    exportarExcel(empresaId: string, fechaInicio: string, fechaFin: string, res: Response): Promise<void>;
+    exportarExcel(req: any, fechaInicio: string, fechaFin: string, res: Response): Promise<void>;
 }

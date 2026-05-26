@@ -18,6 +18,7 @@ const producto_module_1 = require("./modules/producto/producto.module");
 const certificado_module_1 = require("./modules/certificado/certificado.module");
 const factura_module_1 = require("./modules/factura/factura.module");
 const sri_module_1 = require("./modules/sri/sri.module");
+const auth_module_1 = require("./modules/auth/auth.module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -52,6 +53,7 @@ exports.AppModule = AppModule = __decorate([
             certificado_module_1.CertificadoModule,
             factura_module_1.FacturaModule,
             sri_module_1.SriModule,
+            auth_module_1.AuthModule,
         ],
         controllers: [app_controller_1.AppController],
         providers: [app_service_1.AppService],

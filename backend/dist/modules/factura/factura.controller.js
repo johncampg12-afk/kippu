@@ -52,6 +52,7 @@ const create_factura_dto_1 = require("./dto/create-factura.dto");
 const typeorm_1 = require("@nestjs/typeorm");
 const typeorm_2 = require("typeorm");
 const factura_entity_1 = require("./entities/factura.entity");
+const jwt_auth_guard_1 = require("../auth/jwt-auth.guard");
 const ExcelJS = __importStar(require("exceljs"));
 let FacturaController = class FacturaController {
     facturaService;
@@ -60,19 +61,19 @@ let FacturaController = class FacturaController {
         this.facturaService = facturaService;
         this.facturaRepo = facturaRepo;
     }
-    create(createFacturaDto) {
+    create(createFacturaDto, req) {
+        createFacturaDto.empresaId = req.user.empresaId;
         return this.facturaService.create(createFacturaDto);
     }
-    async findAll(empresaId, fechaInicio, fechaFin, cliente, estado) {
+    async findAll(req, fechaInicio, fechaFin, cliente, estado) {
+        const empresaId = req.user.empresaId;
         const queryBuilder = this.facturaRepo
             .createQueryBuilder('f')
             .leftJoinAndSelect('f.cliente', 'c')
             .leftJoinAndSelect('f.detalles', 'd')
+            .where('f.empresaId = :empresaId', { empresaId })
             .orderBy('f.fechaEmision', 'DESC')
             .addOrderBy('f.numeroComprobante', 'DESC');
-        if (empresaId) {
-            queryBuilder.andWhere('f.empresaId = :empresaId', { empresaId });
-        }
         if (fechaInicio && fechaFin) {
             queryBuilder.andWhere('f.fechaEmision BETWEEN :inicio AND :fin', {
                 inicio: fechaInicio,
@@ -90,7 +91,8 @@ let FacturaController = class FacturaController {
         }
         return queryBuilder.getMany();
     }
-    async getEstadisticas(empresaId) {
+    async getEstadisticas(req) {
+        const empresaId = req.user.empresaId;
         const ahora = new Date();
         const inicioMes = new Date(ahora.getFullYear(), ahora.getMonth(), 1);
         const finMes = new Date(ahora.getFullYear(), ahora.getMonth() + 1, 0);
@@ -122,7 +124,8 @@ let FacturaController = class FacturaController {
             vencenHoy,
         };
     }
-    async exportarExcel(empresaId, fechaInicio, fechaFin, res) {
+    async exportarExcel(req, fechaInicio, fechaFin, res) {
+        const empresaId = req.user.empresaId;
         const queryBuilder = this.facturaRepo
             .createQueryBuilder('f')
             .leftJoinAndSelect('f.cliente', 'c')
@@ -183,39 +186,41 @@ exports.FacturaController = FacturaController;
 __decorate([
     (0, common_1.Post)(),
     __param(0, (0, common_1.Body)()),
+    __param(1, (0, common_1.Request)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [create_factura_dto_1.CreateFacturaDto]),
+    __metadata("design:paramtypes", [create_factura_dto_1.CreateFacturaDto, Object]),
     __metadata("design:returntype", void 0)
 ], FacturaController.prototype, "create", null);
 __decorate([
     (0, common_1.Get)(),
-    __param(0, (0, common_1.Query)('empresaId')),
+    __param(0, (0, common_1.Request)()),
     __param(1, (0, common_1.Query)('fechaInicio')),
     __param(2, (0, common_1.Query)('fechaFin')),
     __param(3, (0, common_1.Query)('cliente')),
     __param(4, (0, common_1.Query)('estado')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, String, String, String, String]),
+    __metadata("design:paramtypes", [Object, String, String, String, String]),
     __metadata("design:returntype", Promise)
 ], FacturaController.prototype, "findAll", null);
 __decorate([
-    (0, common_1.Get)('estadisticas/:empresaId'),
-    __param(0, (0, common_1.Param)('empresaId')),
+    (0, common_1.Get)('estadisticas'),
+    __param(0, (0, common_1.Request)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
+    __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
 ], FacturaController.prototype, "getEstadisticas", null);
 __decorate([
-    (0, common_1.Get)('exportar/:empresaId'),
-    __param(0, (0, common_1.Param)('empresaId')),
+    (0, common_1.Get)('exportar'),
+    __param(0, (0, common_1.Request)()),
     __param(1, (0, common_1.Query)('fechaInicio')),
     __param(2, (0, common_1.Query)('fechaFin')),
     __param(3, (0, common_1.Res)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, String, String, Object]),
+    __metadata("design:paramtypes", [Object, String, String, Object]),
     __metadata("design:returntype", Promise)
 ], FacturaController.prototype, "exportarExcel", null);
 exports.FacturaController = FacturaController = __decorate([
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
     (0, common_1.Controller)('factura'),
     __param(1, (0, typeorm_1.InjectRepository)(factura_entity_1.Factura)),
     __metadata("design:paramtypes", [factura_service_1.FacturaService,
