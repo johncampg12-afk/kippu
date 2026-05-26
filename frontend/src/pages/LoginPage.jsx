@@ -1,14 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import {
-  Box, Container, Paper, Typography, TextField, Button, Alert,
-  IconButton, InputAdornment, Divider,
-} from '@mui/material';
+import { Box, Container, Paper, Typography, TextField, Button, Alert, IconButton, InputAdornment, Divider } from '@mui/material';
 import { Visibility, VisibilityOff, ArrowForward, Google as GoogleIcon } from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { useGoogleLogin } from '@react-oauth/google';
 import { useAuth } from '../context/AuthContext';
+import { useGoogleLogin } from '@react-oauth/google';
 import api from '../services/api';
 
 function LoginPage() {
@@ -21,6 +18,23 @@ function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [particles, setParticles] = useState([]);
+
+  // Login con Google
+  const googleLogin = useGoogleLogin({
+    onSuccess: async (tokenResponse) => {
+      try {
+        const response = await api.post('/auth/google', {
+          token: tokenResponse.access_token,
+        });
+        localStorage.setItem('token', response.data.access_token);
+        api.defaults.headers.common['Authorization'] = `Bearer ${response.data.access_token}`;
+        navigate('/dashboard');
+      } catch (error) {
+        setError('Error al iniciar sesión con Google');
+      }
+    },
+    onError: () => setError('Error al iniciar sesión con Google'),
+  });
 
   // Partículas flotantes
   useEffect(() => {
@@ -73,35 +87,6 @@ function LoginPage() {
       setLoading(false);
     }
   };
-
-  const googleLogin = useGoogleLogin({
-    onSuccess: async (tokenResponse) => {
-      try {
-        console.log('🔐 Token de Google recibido:', tokenResponse.credential?.substring(0, 20) + '...');
-        
-        // Enviar el CREDENTIAL (ID token) al backend
-        const response = await api.post('/auth/google', {
-          token: tokenResponse.credential,
-        });
-        
-        console.log('✅ Respuesta del backend:', response.data);
-        
-        // Guardar el JWT de KIPU
-        localStorage.setItem('token', response.data.access_token);
-        api.defaults.headers.common['Authorization'] = `Bearer ${response.data.access_token}`;
-        
-        // Actualizar el contexto de autenticación
-        navigate('/dashboard');
-      } catch (error) {
-        console.error('❌ Error en Google login:', error);
-        setError('Error al iniciar sesión con Google');
-      }
-    },
-    onError: (error) => {
-      console.error('❌ Error de Google:', error);
-      setError('Error al iniciar sesión con Google');
-    },
-  });
 
   return (
     <Box
@@ -196,7 +181,6 @@ function LoginPage() {
               </Alert>
             )}
 
-            {/* Formulario de login normal */}
             <form onSubmit={handleSubmit}>
               <TextField
                 fullWidth
@@ -243,14 +227,13 @@ function LoginPage() {
               </Button>
             </form>
 
-            {/* Separador */}
+            {/* Separador y botón de Google */}
             <Divider sx={{ my: 3 }}>
               <Typography variant="body2" color="text.secondary">
                 o
               </Typography>
             </Divider>
 
-            {/* Botón de Google */}
             <Button
               fullWidth
               variant="outlined"
