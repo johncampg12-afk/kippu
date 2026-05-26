@@ -1,29 +1,41 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
+import * as cors from 'cors';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  // CORS configurado ANTES de cualquier otra cosa
-  app.enableCors({
-    origin: [
-      'http://localhost:5173',
-      'https://kippulab.com',
-      'https://www.kippulab.com',
-    ],
+  // CORS como middleware Express - se ejecuta antes de cualquier guard
+  app.use(cors({
+    origin: (origin, callback) => {
+      const allowed = [
+        'http://localhost:5173',
+        'http://localhost:3000',
+        'https://kippulab.com',
+        'https://www.kippulab.com',
+      ];
+      // Permitir peticiones sin origen (server-to-server, Postman, etc.)
+      if (!origin || allowed.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error(`CORS bloqueado: ${origin}`));
+      }
+    },
+    credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Origin', 'X-Requested-With'],
-    credentials: true,
+    preflightContinue: false,
     optionsSuccessStatus: 204,
-  });
+  }));
 
   app.useGlobalPipes(new ValidationPipe({
     whitelist: true,
     transform: true,
   }));
 
-  await app.listen(process.env.PORT || 3000);
-  console.log(`🚀 Backend corriendo en puerto ${process.env.PORT || 3000}`);
+  const port = process.env.PORT || 3000;
+  await app.listen(port);
+  console.log(`🚀 Backend corriendo en puerto ${port}`);
 }
 bootstrap();

@@ -2,8 +2,8 @@ import { Injectable, UnauthorizedException, ConflictException } from '@nestjs/co
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { JwtService } from '@nestjs/jwt';
-import * as bcrypt from 'bcrypt';
 import { OAuth2Client } from 'google-auth-library';
+import * as bcrypt from 'bcrypt';
 import { User } from './entities/user.entity';
 import { Empresa } from '../empresa/entities/empresa.entity';
 import { RegisterDto } from './dto/register.dto';
@@ -11,13 +11,18 @@ import { LoginDto } from './dto/login.dto';
 
 @Injectable()
 export class AuthService {
+  private googleClient: OAuth2Client;
+
   constructor(
     @InjectRepository(User)
     private userRepo: Repository<User>,
     @InjectRepository(Empresa)
     private empresaRepo: Repository<Empresa>,
     private jwtService: JwtService,
-  ) {}
+  ) {
+    // Inicializar el cliente de Google con el ID de la variable de entorno
+    this.googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+  }
 
   async register(dto: RegisterDto) {
     const existingUser = await this.userRepo.findOne({ where: { email: dto.email } });
@@ -62,15 +67,17 @@ export class AuthService {
   }
 
   async googleLogin(googleToken: string) {
-    const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
-
     try {
-      const ticket = await client.verifyIdToken({
+      console.log('🔐 Verificando token de Google...');
+      
+      const ticket = await this.googleClient.verifyIdToken({
         idToken: googleToken,
         audience: process.env.GOOGLE_CLIENT_ID,
       });
 
       const payload = ticket.getPayload();
+      console.log('✅ Token verificado:', payload?.email);
+      
       if (!payload || !payload.email) {
         throw new UnauthorizedException('Token de Google inválido');
       }
@@ -81,6 +88,8 @@ export class AuthService {
       let user = await this.userRepo.findOne({ where: { email }, relations: ['empresa'] });
 
       if (!user) {
+        console.log('👤 Usuario nuevo, creando cuenta...');
+        
         // Crear empresa temporal (datos se completarán dentro de la app)
         const empresa = this.empresaRepo.create({
           ruc: 'PENDIENTE',
@@ -93,7 +102,7 @@ export class AuthService {
         });
         const empresaGuardada = await this.empresaRepo.save(empresa);
 
-        // Crear usuario sin contraseña
+        // Crear usuario sin contraseña (autenticación solo por Google)
         user = this.userRepo.create({
           name: name || email,
           email,
@@ -102,12 +111,17 @@ export class AuthService {
         });
         await this.userRepo.save(user);
         user.empresa = empresaGuardada;
+        
+        console.log('✅ Usuario creado exitosamente');
+      } else {
+        console.log('👤 Usuario existente encontrado');
       }
 
       return this.generateToken(user, user.empresa);
     } catch (error) {
+      console.error('❌ Error en googleLogin:', error.message);
       if (error instanceof UnauthorizedException) throw error;
-      throw new UnauthorizedException('Error al verificar token de Google');
+      throw new UnauthorizedException('Error al verificar el token de Google');
     }
   }
 

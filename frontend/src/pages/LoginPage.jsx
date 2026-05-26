@@ -3,11 +3,11 @@ import {
   Box, Container, Paper, Typography, TextField, Button, Alert,
   IconButton, InputAdornment, Divider,
 } from '@mui/material';
-import { Visibility, VisibilityOff, ArrowForward } from '@mui/icons-material';
+import { Visibility, VisibilityOff, ArrowForward, Google as GoogleIcon } from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { GoogleLogin } from '@react-oauth/google';
+import { useGoogleLogin } from '@react-oauth/google';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 
@@ -22,7 +22,7 @@ function LoginPage() {
   const [error, setError] = useState(null);
   const [particles, setParticles] = useState([]);
 
-  // Partículas flotantes (igual que antes)
+  // Partículas flotantes
   useEffect(() => {
     const newParticles = [];
     for (let i = 0; i < 120; i++) {
@@ -60,7 +60,6 @@ function LoginPage() {
     return () => cancelAnimationFrame(animationFrame);
   }, []);
 
-  // Login normal con email/contraseña
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(null);
@@ -75,23 +74,34 @@ function LoginPage() {
     }
   };
 
-  // Login con Google
-  const handleGoogleSuccess = async (credentialResponse) => {
-    try {
-      const response = await api.post('/auth/google', {
-        token: credentialResponse.credential, // ID token JWT de Google
-      });
-
-      if (response.data.access_token) {
+  const googleLogin = useGoogleLogin({
+    onSuccess: async (tokenResponse) => {
+      try {
+        console.log('🔐 Token de Google recibido:', tokenResponse.credential?.substring(0, 20) + '...');
+        
+        // Enviar el CREDENTIAL (ID token) al backend
+        const response = await api.post('/auth/google', {
+          token: tokenResponse.credential,
+        });
+        
+        console.log('✅ Respuesta del backend:', response.data);
+        
+        // Guardar el JWT de KIPU
         localStorage.setItem('token', response.data.access_token);
         api.defaults.headers.common['Authorization'] = `Bearer ${response.data.access_token}`;
+        
+        // Actualizar el contexto de autenticación
         navigate('/dashboard');
+      } catch (error) {
+        console.error('❌ Error en Google login:', error);
+        setError('Error al iniciar sesión con Google');
       }
-    } catch (err) {
-      console.error('Error Google login:', err.response?.data || err.message);
-      setError(err.response?.data?.message || 'Error al iniciar sesión con Google');
-    }
-  };
+    },
+    onError: (error) => {
+      console.error('❌ Error de Google:', error);
+      setError('Error al iniciar sesión con Google');
+    },
+  });
 
   return (
     <Box
@@ -154,7 +164,7 @@ function LoginPage() {
                   <Box
                     component="img"
                     src="/kipu_condor.jpg"
-                    alt="KIPU"
+                    alt="KIPPU"
                     sx={{ width: 36, height: 36, borderRadius: 2, objectFit: 'cover' }}
                   />
                   <Typography
@@ -166,7 +176,7 @@ function LoginPage() {
                       letterSpacing: '-0.02em',
                     }}
                   >
-                    kipu
+                    kippu
                   </Typography>
                 </Link>
               </motion.div>
@@ -186,7 +196,7 @@ function LoginPage() {
               </Alert>
             )}
 
-            {/* Formulario normal */}
+            {/* Formulario de login normal */}
             <form onSubmit={handleSubmit}>
               <TextField
                 fullWidth
@@ -241,16 +251,25 @@ function LoginPage() {
             </Divider>
 
             {/* Botón de Google */}
-            <Box sx={{ display: 'flex', justifyContent: 'center' }}>
-              <GoogleLogin
-                onSuccess={handleGoogleSuccess}
-                onError={() => setError('Error al iniciar sesión con Google')}
-                useOneTap={false}
-                theme="outline"
-                size="large"
-                width="100%"
-              />
-            </Box>
+            <Button
+              fullWidth
+              variant="outlined"
+              startIcon={<GoogleIcon />}
+              onClick={() => googleLogin()}
+              sx={{
+                py: 1.5,
+                fontWeight: 500,
+                borderRadius: 3,
+                borderColor: 'divider',
+                color: 'text.primary',
+                '&:hover': {
+                  borderColor: 'primary.main',
+                  bgcolor: 'background.default',
+                },
+              }}
+            >
+              Iniciar sesión con Google
+            </Button>
 
             <Typography variant="body2" sx={{ mt: 3, textAlign: 'center', color: 'text.secondary' }}>
               ¿No tienes cuenta?{' '}
